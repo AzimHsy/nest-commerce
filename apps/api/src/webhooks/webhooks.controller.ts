@@ -1,10 +1,4 @@
-import {
-  Body,
-  Controller,
-  HttpCode,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
 import { WebhooksService } from './webhooks.service';
 import { PaymentWebhookDto } from './dto/payment-webhook.dto';
 import { WebhookSignatureGuard } from './webhook-signature.guard';

@@ -45,7 +45,12 @@ describe('Orders & Payment webhook (e2e)', () => {
     const variant = await request(app.getHttpServer())
       .post(`/products/${product.body.id}/variants`)
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ sku: `SKU-${randomUUID().slice(0, 8)}`, name: 'V', priceSen, stockQty })
+      .send({
+        sku: `SKU-${randomUUID().slice(0, 8)}`,
+        name: 'V',
+        priceSen,
+        stockQty,
+      })
       .expect(201);
     return {
       productId: product.body.id,
@@ -213,7 +218,7 @@ describe('Orders & Payment webhook (e2e)', () => {
   });
 
   it('snapshots price: editing a variant price never moves an existing order total', async () => {
-    const { productId: _productId, variantId } = await makeVariant(10, 1000);
+    const { variantId } = await makeVariant(10, 1000);
     const order = await createOrder(variantId, 2).expect(201);
     expect(order.body.totalSen).toBe(2000);
 

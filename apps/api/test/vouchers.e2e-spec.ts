@@ -19,10 +19,7 @@ describe('Vouchers (e2e)', () => {
 
   const pay = (payload: object) => {
     const body = JSON.stringify(payload);
-    const signature = createHmac(
-      'sha256',
-      process.env.WEBHOOK_SECRET as string,
-    )
+    const signature = createHmac('sha256', process.env.WEBHOOK_SECRET as string)
       .update(body)
       .digest('hex');
     return request(app.getHttpServer())
@@ -53,11 +50,7 @@ describe('Vouchers (e2e)', () => {
     return variant.body.id as string;
   };
 
-  const createOrder = (
-    variantId: string,
-    qty: number,
-    voucherCode?: string,
-  ) =>
+  const createOrder = (variantId: string, qty: number, voucherCode?: string) =>
     request(app.getHttpServer())
       .post('/orders')
       .send({

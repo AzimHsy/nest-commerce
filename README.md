@@ -1,46 +1,52 @@
-# context-kit
+# nest-commerce
 
-Blank `context/` template for spec-driven projects. Context files define **what** to build, **how** to build it, and the **current state** of progress — implementation always happens against these specs, never inferred from scratch.
+The **ops core of an e-commerce backend** — NestJS + Prisma + PostgreSQL — plus a deliberately plain Next.js reference storefront that exercises it end to end.
 
-## Usage
+> **Honesty note:** this is a practice / portfolio project, built to learn NestJS + Prisma and to rehearse the risky parts of a real commerce build (transactions, stock integrity, idempotent payment webhooks, voucher logic). It is **not production software** — no real payment gateway, no deployment story, guest checkout only.
 
-### Mode 1 — New project (repo born with context/)
+## What it proves (each has a dedicated e2e test)
+
+- **Atomic stock**: decrements happen in one Prisma `$transaction` with a conditional `stockQty >= qty` guard — oversell returns 409 and rolls back everything; stock can never go negative under racing payments
+- **Idempotent payment webhook**: HMAC-SHA256 signature over the raw body (timing-safe compare) + a `WebhookEvent` unique-id ledger — replaying a delivery produces zero double effects
+- **Price snapshots**: order items store price-at-purchase; editing a variant's price never moves an existing order's totals
+- **Voucher engine**: percent/fixed with expiry, usage limit, min spend — validated at order creation (422), usage counted only at payment, inside the same transaction
+- **Money as integer sen** end to end; formatting to RM only at the display edge
+
+## Stack
+
+pnpm workspace monorepo:
+
+| App | Stack | Role |
+| --- | --- | --- |
+| `apps/api` | NestJS 11, Prisma 7 (pg driver adapter), PostgreSQL 16, JWT + Passport, class-validator, helmet + throttler | All business logic |
+| `apps/web` | Next.js 16, plain Tailwind | Reference storefront — display and API calls only, zero business rules |
+
+## Run it
 
 ```bash
-gh repo create AzimHsy/<project-name> --template AzimHsy/context-kit --private
+docker compose up -d                 # Postgres 16 (dev + test databases)
+pnpm install
+pnpm --filter api exec prisma migrate dev
+pnpm --filter api exec prisma db seed   # admin/staff users, products, vouchers
+pnpm --filter api start:dev          # API on :4000
+pnpm --filter web dev                # storefront on :3000
 ```
 
-Then scaffold the app around the seeded `context/` folder.
+Copy `apps/api/.env.example` → `apps/api/.env` and `apps/web/.env.example` → `apps/web/.env.local` first.
 
-### Mode 2 — Existing repo (drop context/ in)
+**The loop:** browse → add to cart → checkout (try voucher `WELCOME10`) → **Fake Pay** → order flips PAID and stock visibly drops. "Fake Pay" is a Next server route that holds the webhook secret server-side and sends a signed CHIP-style callback to the API — the browser never sees the secret.
 
-Fetch the `context/` folder fresh from this repo (source of truth — never copy from another project's filled-in version):
+Admin surface is API-only (no UI): login via `POST /auth/login` (see seed credentials in `.env.example`), then manage products/variants/vouchers and read reports (`/reports/daily-revenue`, `/reports/top-products`, `/reports/low-stock`).
+
+## Tests
 
 ```bash
-gh repo clone AzimHsy/context-kit /tmp/context-kit -- --depth 1
-cp -r /tmp/context-kit/context <existing-repo>/
+pnpm --filter api test        # unit
+pnpm --filter api test:e2e    # 43 e2e against the dedicated test database
 ```
 
-## How the files get filled
+CI (GitHub Actions): lint + build + unit + e2e (Postgres service container) + dependency audit, for both apps.
 
-Via the **discussion phase** — never by hand-inferring answers:
+## Spec-driven
 
-1. Explore existing context first (code, commits, client brief)
-2. Clarifying questions, one at a time
-3. 2–3 approaches with trade-offs + a recommendation
-4. Design presented in sections, approved per section
-5. Templates filled from the discussion answers
-6. Self-review: no placeholders left, no contradictions, no requirement readable two ways
-7. **No code until the filled specs are approved**
-
-## Files
-
-| File | Owns |
-| --- | --- |
-| `project-overview.md` | What, for whom, goals, core flow, in/out of scope, success criteria |
-| `architecture.md` | Stack, system boundaries, storage model, auth, invariants |
-| `code-standards.md` | Language/framework conventions, API rules, file organization |
-| `ui-context.md` | Theme, color tokens, typography, radius scale, layout patterns |
-| `ai-workflow-rules.md` | Scoping rules, when to split work, missing-requirement protocol, done criteria |
-| `progress-tracker.md` | Current phase/goal, completed, next up, open questions, decisions |
-| `feature-specs/` | Post-v1 feature specs from later discussion runs |
+Everything was built against the specs in [`context/`](./context) — written and approved before any code, one gated unit at a time. `context/progress-tracker.md` is the honest build log, including the bugs found along the way.

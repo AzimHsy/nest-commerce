@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
@@ -13,6 +15,18 @@ import { ReportsModule } from './reports/reports.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    // Global rate limit, env-tunable (e2e raises the limit via env override).
+    ThrottlerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        throttlers: [
+          {
+            ttl: Number(config.get('THROTTLE_TTL_MS') ?? 60_000),
+            limit: Number(config.get('THROTTLE_LIMIT') ?? 100),
+          },
+        ],
+      }),
+    }),
     PrismaModule,
     UsersModule,
     AuthModule,
@@ -23,5 +37,10 @@ import { ReportsModule } from './reports/reports.module';
     ReportsModule,
   ],
   controllers: [AppController],
+  providers: [
+    // Throttling as a global guard is safe app-wide (unlike RolesGuard, it
+    // doesn't depend on request.user). Routes can tighten via @Throttle.
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+  ],
 })
 export class AppModule {}

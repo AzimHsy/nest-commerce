@@ -1,0 +1,73 @@
+# Reusable CI shape for a pnpm two-app workspace (Nest API + Next web) with
+# Prisma + Postgres. Jobs: install → generate → lint → build → unit → e2e → audit.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nest_commerce
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nest_commerce?schema=public
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nest_commerce_test?schema=public
+      JWT_SECRET: ci-only-jwt-secret
+      WEBHOOK_SECRET: ci-only-webhook-secret
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Create test database
+        run: |
+          PGPASSWORD=postgres psql -h localhost -U postgres -d nest_commerce \
+            -c "CREATE DATABASE nest_commerce_test;"
+
+      - name: Prisma generate
+        run: pnpm --filter api exec prisma generate
+
+      - name: Lint
+        run: pnpm -r lint
+
+      - name: Build both apps
+        run: pnpm -r build
+
+      - name: Unit tests
+        run: pnpm --filter api test
+
+      - name: e2e tests
+        run: pnpm --filter api test:e2e
+
+      - name: Dependency audit
+        run: pnpm audit --audit-level high

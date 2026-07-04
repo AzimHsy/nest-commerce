@@ -22,7 +22,10 @@ export class VouchersService {
     this.assertValueSane(dto.type, dto.value);
     try {
       return await this.prisma.voucher.create({
-        data: { ...dto, expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : null },
+        data: {
+          ...dto,
+          expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : null,
+        },
       });
     } catch (error) {
       throw toWriteError(error, 'code');
@@ -34,7 +37,10 @@ export class VouchersService {
     if (!existing) {
       throw new NotFoundException(`Voucher '${id}' not found`);
     }
-    this.assertValueSane(dto.type ?? existing.type, dto.value ?? existing.value);
+    this.assertValueSane(
+      dto.type ?? existing.type,
+      dto.value ?? existing.value,
+    );
     try {
       return await this.prisma.voucher.update({
         where: { id },
@@ -68,7 +74,10 @@ export class VouchersService {
     if (voucher.expiresAt && voucher.expiresAt.getTime() < Date.now()) {
       throw new UnprocessableEntityException(`Voucher '${code}' has expired`);
     }
-    if (voucher.usageLimit !== null && voucher.usedCount >= voucher.usageLimit) {
+    if (
+      voucher.usageLimit !== null &&
+      voucher.usedCount >= voucher.usageLimit
+    ) {
       throw new UnprocessableEntityException(
         `Voucher '${code}' has reached its usage limit`,
       );

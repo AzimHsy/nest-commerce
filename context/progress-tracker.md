@@ -4,11 +4,11 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- **Unit 7 (reports) — DONE. Next: Unit 8 (hardening + CI, final unit).**
+- **🏁 ALL UNITS (0–8) COMPLETE — project done.** First CI run pending Azim's push.
 
 ## Current Goal
 
-- Unit 8: throttler, helmet, CORS tightened, GitHub Actions CI, final security pass, honest README
+- Post-completion: push to GitHub → confirm CI green → optional Medusa spike comparison (the purpose-chain follow-up)
 
 ## Completed
 
@@ -30,13 +30,26 @@ Update this file after every meaningful implementation change.
 
 - 2026-07-05: **Unit 7 CLOSED** — Reports. Added `Order.paidAt` (set inside the payment `$transaction`; migration `order_paid_at`) so revenue is keyed on payment day, not order day. `/reports` guarded `@Roles(ADMIN, STAFF)` (STAFF may read reports per access model): `daily-revenue` (raw SQL `date_trunc` on `paidAt`, PAID only), `top-products?limit=` (raw SQL join, units + `qty × priceSenSnapshot` revenue — the two spec-sanctioned raw-SQL aggregations; bigint→Number at the edge), `low-stock?threshold=` (typed Prisma `lte`, ascending). Tests: **6 reports e2e** (anon 401, STAFF 200, revenue math 3 orders = 10000 sen with unpaid order excluded, top ordering + snapshot revenue, `?limit`, threshold behavior) — suite **43 e2e + 5 unit**, build exit 0.
 
+- 2026-07-05: **Unit 8 CLOSED — PROJECT COMPLETE.** Hardening: helmet (CSP/HSTS/nosniff/frame-options **verified live**); CORS restricted to `CORS_ORIGINS` (allowed origin echoes ACAO, evil origin gets none — verified live); `@nestjs/throttler` global 100/min env-tunable (**verified live: first 429 at exactly request #97 after 4 probe requests**) + login tightened to 10/min (**verified: 10×401 then 429**), e2e overrides limit via `setup-e2e.ts`. `.github/workflows/ci.yml` = the reusable CI template (postgres:16 service + test-db create, pnpm/node cache, install→generate→lint→build→unit→e2e→`pnpm audit --audit-level high`). Lint brought to zero across both apps (api: unsafe-* rules relaxed for test files only — supertest `res.body` is `any` by design; web: one justified inline disable for cart localStorage hydration). **Fixed latent bug**: `prisma.config.ts` outside `src/` had shifted `nest build` output to `dist/src/main.js`, silently breaking `start:prod` since Unit 1 — excluded prisma files in `tsconfig.build.json`, `dist/main.js` restored, prod boot verified. Honest README written (practice project, run instructions, correctness pillars). Final gate: **43 e2e + 5 unit, build + lint exit 0.**
+
 ## In Progress
 
-- None — at Unit 7/8 boundary.
+- None. Project complete.
 
 ## Next Up
 
-- Unit 8 (final): `@nestjs/throttler` (env-tunable, e2e override), helmet, CORS tightened to the storefront origin, `.github/workflows/ci.yml` (postgres service; lint/build/test/e2e/audit — the reusable CI template deliverable), final security pass, honest README
+- Azim: `git push origin main` → watch first CI run
+- Optional (purpose chain): spike Medusa v2, compare against these hand-built units 3–5 to make the client-build engine decision evidence-based
+
+## Security Pass (Unit 8 final checklist)
+
+- ✅ Every endpoint validated (global ValidationPipe whitelist+forbid; DTOs on all bodies; ParseIntPipe on query params)
+- ✅ Secrets only from env (`JWT_SECRET`, `WEBHOOK_SECRET`); `.env` gitignored both apps, `.env.example` current; webhook secret server-side only in the storefront
+- ✅ AuthN/AuthZ: JWT (15m, no refresh by scope), roles enforced via guards; login rate-limited 10/min; same 401 for bad-user/bad-password
+- ✅ Webhook: HMAC-SHA256 over raw body, timing-safe compare, idempotency ledger
+- ✅ helmet, CORS allowlist, global throttle — all verified live, not assumed
+- ✅ SQL: Prisma parameterized throughout; the two raw aggregations use `Prisma.sql` tagged templates (no string interpolation of user input; `limit` is ParseIntPipe-validated)
+- ✅ No stack traces/internals in error responses (Nest HTTP exceptions only)
 
 ## Open Questions
 

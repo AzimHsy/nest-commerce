@@ -35,11 +35,14 @@ const STORAGE_KEY = "nest-commerce-cart";
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [lines, setLines] = useState<CartLine[]>([]);
 
-  // localStorage survives reloads; read once on mount (SSR has no storage).
+  // localStorage survives reloads; read once on mount. Hydration-safe: the
+  // server (and first client paint) must render an empty cart, then fill from
+  // storage — the legitimate setState-in-effect case, hence the local disable.
   useEffect(() => {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (raw) {
       try {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLines(JSON.parse(raw) as CartLine[]);
       } catch {
         window.localStorage.removeItem(STORAGE_KEY);

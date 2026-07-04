@@ -46,11 +46,10 @@ describe('RolesGuard', () => {
   });
 
   it('reads roles from the ROLES_KEY metadata', () => {
-    const reflector = {
-      getAllAndOverride: jest.fn().mockReturnValue([Role.ADMIN]),
-    } as unknown as Reflector;
+    const getAllAndOverride = jest.fn().mockReturnValue([Role.ADMIN]);
+    const reflector = { getAllAndOverride } as unknown as Reflector;
     new RolesGuard(reflector).canActivate(makeContext(admin));
-    expect(reflector.getAllAndOverride).toHaveBeenCalledWith(
+    expect(getAllAndOverride).toHaveBeenCalledWith(
       ROLES_KEY,
       expect.any(Array),
     );

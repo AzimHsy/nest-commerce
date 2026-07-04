@@ -19,10 +19,7 @@ describe('Reports (e2e)', () => {
 
   const pay = (orderId: string) => {
     const body = JSON.stringify({ eventId: randomUUID(), orderId });
-    const signature = createHmac(
-      'sha256',
-      process.env.WEBHOOK_SECRET as string,
-    )
+    const signature = createHmac('sha256', process.env.WEBHOOK_SECRET as string)
       .update(body)
       .digest('hex');
     return request(app.getHttpServer())
@@ -140,7 +137,9 @@ describe('Reports (e2e)', () => {
   });
 
   it('requires auth: anonymous 401', async () => {
-    await request(app.getHttpServer()).get('/reports/daily-revenue').expect(401);
+    await request(app.getHttpServer())
+      .get('/reports/daily-revenue')
+      .expect(401);
   });
 
   it('STAFF can read reports (200)', async () => {
