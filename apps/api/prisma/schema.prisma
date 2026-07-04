@@ -2,6 +2,10 @@
 // The full commerce model (User, Product, Variant, Order, OrderItem,
 // Voucher, WebhookEvent) lands in later units. Unit 1 only needs a
 // working datasource + client so the /health endpoint can hit the db.
+//
+// Prisma 7 note: the connection URL no longer lives here. Migrate/introspect
+// read it from `prisma.config.ts`; the runtime client gets a pg driver
+// adapter (see src/prisma/prisma.service.ts).
 
 generator client {
   provider = "prisma-client-js"
@@ -9,5 +13,4 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }

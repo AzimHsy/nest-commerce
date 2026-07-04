@@ -6,7 +6,7 @@
 | -------- | ----------------------------------- | ------------------------------------------------------ |
 | Monorepo | pnpm workspaces                     | `apps/api` + `apps/web`, shared root tooling           |
 | Backend  | NestJS (latest) + TypeScript strict | The ops core — ALL business logic lives here           |
-| ORM      | Prisma                              | Schema, migrations, typed client, `$transaction`       |
+| ORM      | Prisma 7 (pg driver adapter)        | Schema, migrations, typed client, `$transaction`       |
 | Database | PostgreSQL 16 via Docker Compose    | Dev database + separate test database, local only      |
 | Frontend | Next.js (latest) + Tailwind         | Reference storefront — exercises the API, nothing more |
 | Auth     | `@nestjs/jwt` + Passport + bcrypt   | JWT access tokens; roles enforced by guards            |
@@ -16,7 +16,7 @@
 ## System Boundaries
 
 - `apps/api/src/<domain>/` — one Nest module per domain: `auth`, `products`, `orders`, `vouchers`, `webhooks`, `reports`. Controllers handle HTTP only; services hold business logic; modules import each other's public module, never internals
-- `apps/api/prisma/` — `schema.prisma` + migrations. The ONLY place the data model is defined
+- `apps/api/prisma/` — `schema.prisma` + migrations. The ONLY place the data model is defined. Prisma 7: the connection URL lives in `apps/api/prisma.config.ts` (CLI) and the runtime client gets a `@prisma/adapter-pg` adapter built from `DATABASE_URL` in `src/prisma/prisma.service.ts` — not in `schema.prisma`
 - `apps/web/` — storefront. Talks to the API exclusively via `NEXT_PUBLIC_API_URL`; owns zero business rules (no price math, no stock logic, no voucher validation — display and API calls only)
 - `docker-compose.yml` (root) — Postgres with `nest_commerce` (dev) and `nest_commerce_test` (test) databases
 

@@ -24,6 +24,7 @@
 ## Prisma
 
 - `schema.prisma` is the single source of truth; every change lands via `prisma migrate dev` (no db push)
+- **Prisma 7**: no `url` in `schema.prisma`. CLI reads it from `prisma.config.ts`; the app connects through a `@prisma/adapter-pg` driver adapter (`new PrismaClient({ adapter })`). CLI commands need env loaded — run via `pnpm --filter api exec prisma …` from `apps/api`
 - Multi-step money/stock mutations ALWAYS inside `$transaction`
 - Conditional updates for stock (`updateMany` with `stockQty: { gte: qty }` guard, check affected count) — never read-then-write races
 
