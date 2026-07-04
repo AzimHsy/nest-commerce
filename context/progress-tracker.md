@@ -4,24 +4,25 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- **Specs written — awaiting Azim's approval (HARD GATE: no code until approved)**
+- **Unit 0 (Docker prerequisite) — installed, awaiting reboot to verify**
 
 ## Current Goal
 
-- Get the six context files approved, then start Unit 0 (Docker prerequisite) + Unit 1 (scaffold)
+- Reboot → verify Docker runs (`docker run hello-world`) → close Unit 0 → start Unit 1 (scaffold)
 
 ## Completed
 
 - 2026-07-04: Discussion phase (stack strategy session → NestJS+Prisma chosen → project shape agreed: ops-core API + plain reference storefront, pnpm monorepo, Docker Postgres, public repo)
 - 2026-07-04: Repo created from `AzimHsy/context-kit` template; all six context files filled from the discussion
+- 2026-07-04: Specs approved by Azim (committed + pushed as `4d012e3`) — hard gate cleared
+- 2026-07-04: Unit 0 install — VirtualMachinePlatform feature enabled (DISM exit 0), WSL 2.7.10 + Docker Desktop 4.80.0 installed via winget (elevated, all exit 0); binaries verified on disk
 
 ## In Progress
 
-- None.
+- Unit 0 verification: **blocked on Windows reboot** (WSL2 virtualization layer requires it). After reboot: launch Docker Desktop, accept its license dialog, verify with `docker run hello-world`
 
 ## Next Up
 
-- Unit 0: Install Docker Desktop (WSL2 backend) — verified NOT currently installed (`docker` not on PATH as of 2026-07-04)
 - Unit 1: pnpm workspace scaffold (`apps/api` Nest + `apps/web` Next), Prisma init, docker-compose.yml, health endpoint
 
 ## Open Questions
