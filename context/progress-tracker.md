@@ -4,11 +4,11 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- **Unit 1 (scaffold) — DONE. Next: Unit 2 (auth).**
+- **Unit 2 (auth) — DONE. Next: Unit 3 (products + variants CRUD).**
 
 ## Current Goal
 
-- Unit 2: users table, bcrypt, JWT login, roles guards (ADMIN/STAFF), seed admin
+- Unit 3: Product + Variant models, admin CRUD (ADMIN-only via @Roles), public list/detail, validation
 
 ## Completed
 
@@ -19,17 +19,25 @@ Update this file after every meaningful implementation change.
 - 2026-07-04: **Unit 0 CLOSED** — rebooted, WSL2 default, Docker engine 29.6.1 up, `docker run --rm hello-world` prints "Hello from Docker!" exit 0 (fresh verification)
 - 2026-07-04: **Unit 1 CLOSED** — pnpm workspace (`apps/api` Nest 11 + `apps/web` Next 16, plain Tailwind); `docker-compose.yml` Postgres 16 (dev `nest_commerce` + test `nest_commerce_test` via init script), container healthy; Prisma 7 wired on the **pg driver adapter** (`prisma.config.ts` + `PrismaService` with `@prisma/adapter-pg`); global `PrismaModule`; `GET /health` does `SELECT 1` → `{status:ok, db:up}`; e2e routed to test db (`setup-e2e.ts`) and **passing**; `pnpm -r build` exit 0. Strict TS on. pnpm build approvals set (sharp, unrs-resolver, prisma, @prisma/engines)
 
+- 2026-07-04: **Unit 2 CLOSED** — Auth. `User` model + `Role` enum (ADMIN/STAFF), first migration `init_auth` applied. `POST /auth/login` (bcryptjs verify → signed JWT), `GET /auth/me` (JwtAuthGuard). Passport JwtStrategy; global ValidationPipe (whitelist/forbidNonWhitelisted/transform); RolesGuard registered as APP_GUARD + `@Roles`/`@CurrentUser` decorators ready for Unit 3. Seed upserts admin+staff (verified). Tests: 6 e2e (login ok/401/400, /auth/me 401/200) against `nest_commerce_test` via globalSetup migrate deploy + 5 RolesGuard unit tests. `pnpm -r build` exit 0.
+
 ## In Progress
 
-- None — at Unit 1/2 boundary.
+- None — at Unit 2/3 boundary.
 
 ## Next Up
 
-- Unit 2: Auth (users, bcrypt, JWT login, roles guards, seed admin)
+- Unit 3: Products + variants CRUD with validation (admin-only writes exercise RolesGuard end-to-end for the first time)
 
 ## Open Questions
 
-- None at spec time.
+- None.
+
+## Notes / Deviations
+
+- **bcryptjs instead of native bcrypt** (2026-07-04) — native bcrypt needs node-gyp; on Windows + Node 24 that's a build gamble with no benefit. bcryptjs is pure-JS, same `hash`/`compare` API. Spec said "bcrypt" generically; intent preserved.
+- **Prisma 7 gotcha**: `migrate dev` auto-generate can lag the schema (client embedded a stale schema once). Always run an explicit `prisma generate` after a migration. Baked into the workflow.
+- **RolesGuard** is wired app-wide (APP_GUARD) but no route uses `@Roles` yet, so its deny path is covered by a unit test now; first end-to-end role rejection lands with Unit 3's admin-only product routes.
 
 ## Architecture Decisions
 

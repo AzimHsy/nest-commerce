@@ -1,7 +1,6 @@
 // Prisma schema — single source of truth for the data model.
-// The full commerce model (User, Product, Variant, Order, OrderItem,
-// Voucher, WebhookEvent) lands in later units. Unit 1 only needs a
-// working datasource + client so the /health endpoint can hit the db.
+// Grows one unit at a time. Product/Variant/Order/Voucher/WebhookEvent
+// land in later units.
 //
 // Prisma 7 note: the connection URL no longer lives here. Migrate/introspect
 // read it from `prisma.config.ts`; the runtime client gets a pg driver
@@ -13,4 +12,18 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  STAFF
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(STAFF)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
