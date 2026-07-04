@@ -40,13 +40,51 @@ model Product {
 }
 
 model Variant {
-  id        String   @id @default(uuid())
-  productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  sku       String   @unique
-  name      String
-  priceSen  Int
-  stockQty  Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String      @id @default(uuid())
+  productId  String
+  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku        String      @unique
+  name       String
+  priceSen   Int
+  stockQty   Int         @default(0)
+  orderItems OrderItem[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+model Order {
+  id            String      @id @default(uuid())
+  status        OrderStatus @default(PENDING)
+  customerName  String
+  customerEmail String
+  subtotalSen   Int
+  discountSen   Int         @default(0)
+  totalSen      Int
+  voucherId     String? // relation added in Unit 5 (voucher engine)
+  items         OrderItem[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model OrderItem {
+  id               String  @id @default(uuid())
+  orderId          String
+  order            Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  variantId        String
+  variant          Variant @relation(fields: [variantId], references: [id])
+  qty              Int
+  priceSenSnapshot Int // price at purchase time — never recomputed (invariant 4)
+}
+
+// Idempotency ledger: one row per processed payment event (invariant 3).
+model WebhookEvent {
+  id              String   @id @default(uuid())
+  externalEventId String   @unique
+  processedAt     DateTime @default(now())
 }

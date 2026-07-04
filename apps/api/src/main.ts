@@ -4,7 +4,9 @@ import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // rawBody: true exposes req.rawBody (the exact received bytes) so the payment
+  // webhook can verify its HMAC signature over the untouched payload.
+  const app = await NestFactory.create(AppModule, { rawBody: true });
   app.enableShutdownHooks();
 
   // Canonical Nest input validation: reject unknown fields, strip them, and

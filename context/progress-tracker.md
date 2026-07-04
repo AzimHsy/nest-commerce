@@ -4,11 +4,11 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- **Unit 3 (products + variants CRUD) — DONE. Next: Unit 4 (orders + stock).**
+- **Unit 4 (orders + stock + webhook) — DONE. Next: Unit 5 (voucher engine).**
 
 ## Current Goal
 
-- Unit 4: create-order flow, `$transaction` stock decrement, oversell 409, idempotent signed payment webhook
+- Unit 5: Voucher model + engine — percent/fixed, expiry, usage limit, min spend; validated at order creation, usage counted at payment (invariant 5)
 
 ## Completed
 
@@ -22,13 +22,15 @@ Update this file after every meaningful implementation change.
 - 2026-07-04: **Unit 2 CLOSED** — Auth. `User` model + `Role` enum (ADMIN/STAFF), first migration `init_auth` applied. `POST /auth/login` (bcryptjs verify → signed JWT), `GET /auth/me` (JwtAuthGuard). Passport JwtStrategy; global ValidationPipe (whitelist/forbidNonWhitelisted/transform); `@Roles`/`@CurrentUser` decorators. Seed upserts admin+staff (verified). Tests: 6 e2e + 5 RolesGuard unit. `pnpm -r build` exit 0.
 - 2026-07-04: **Unit 3 CLOSED** — Products + Variants CRUD. `Product` (slug unique) + `Variant` (sku unique, priceSen, stockQty, cascade delete) models, migration `products_variants`. Public reads (`GET /products`, `GET /products/:slug` with variants, 404 on miss). Admin-only writes via `@UseGuards(JwtAuthGuard, RolesGuard)` + `@Roles(ADMIN)`: product POST/PATCH/DELETE, variant POST (under product) / PATCH / DELETE. class-validator DTOs + `PartialType` for updates. P2002 → 409 conflict, missing → 404. Tests: **12 products e2e** (public list/detail, admin create, **STAFF→403 = RolesGuard end-to-end**, 401 no-token, 409 dup slug/sku, 400 invalid/negative price, 404 missing, update+delete 204) — total suite now **18 e2e + 5 unit**, `pnpm -r build` exit 0.
 
+- 2026-07-05: **Unit 4 CLOSED** — Orders + stock + payment webhook (the risky-30% core). Models: `Order` (PENDING/PAID/CANCELLED, money fields, voucherId? placeholder) + `OrderItem` (`priceSenSnapshot`) + `WebhookEvent` (unique `externalEventId` ledger); migration `orders_stock_webhooks`. `POST /orders` (public): validates stock (fail-fast 409, NOT reserved), snapshots prices, computes totals server-side. `GET /orders/:id`. `POST /webhooks/payment`: HMAC-SHA256 signature guard over **raw body** (`rawBody: true` + timing-safe compare), then idempotent processing — ledger insert + conditional `updateMany` decrement (`stockQty >= qty`, count!==1 → 409 rollback) + status→PAID, all in ONE `$transaction`; duplicate event → 200 `already_processed` (fast path + P2002 race path). Tests: **9 orders e2e** (pending order w/ snapshot totals, creation oversell 409 stock-untouched, happy pay decrements once, replay no-op, payment-race 409 + never-negative, bad/missing signature 401 leaves PENDING, unknown order 404, price-edit never moves existing totals) — suite now **27 e2e + 5 unit**, `pnpm -r build` exit 0.
+
 ## In Progress
 
-- None — at Unit 3/4 boundary.
+- None — at Unit 4/5 boundary.
 
 ## Next Up
 
-- Unit 4: Orders + stock — create-order flow, atomic `$transaction` decrement with `stockQty >= qty` guard, oversell → 409, idempotent signed payment webhook (`WebhookEvent` ledger), voucher check hook (voucher engine is Unit 5)
+- Unit 5: Voucher engine — validation at order creation (expiry/usage-limit/min-spend → 422), `usedCount` incremented at payment inside the webhook transaction
 
 ## Open Questions
 
@@ -38,6 +40,7 @@ Update this file after every meaningful implementation change.
 
 - **bcryptjs instead of native bcrypt** (2026-07-04) — native bcrypt needs node-gyp; on Windows + Node 24 that's a build gamble with no benefit. bcryptjs is pure-JS, same `hash`/`compare` API. Spec said "bcrypt" generically; intent preserved.
 - **Prisma 7 gotcha**: `migrate dev` auto-generate can lag the schema (client embedded a stale schema once). Always run an explicit `prisma generate` after a migration. Baked into the workflow.
+- **Nest testing gotcha (Unit 4)**: `NestFactory.create(AppModule, { rawBody: true })` in main.ts does NOT apply to e2e fixtures — `moduleFixture.createNestApplication({ rawBody: true })` must repeat the option, or `req.rawBody` is undefined and signature verification 401s only in tests.
 - **RolesGuard wiring corrected in Unit 3**: Unit 2 registered RolesGuard as a global `APP_GUARD`, but global guards run BEFORE method-level `@UseGuards(JwtAuthGuard)`, so `request.user` wouldn't be set when a role check ran. Aligned to the spec (`code-standards.md`): removed the global registration; protected routes now use `@UseGuards(JwtAuthGuard, RolesGuard)` (guards execute in listed order → auth then role) + `@Roles(...)`. Verified end-to-end by the STAFF→403 e2e test.
 
 ## Architecture Decisions
