@@ -4,11 +4,11 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- **Unit 0 (Docker prerequisite) — installed, awaiting reboot to verify**
+- **Unit 1 (scaffold) — in progress**
 
 ## Current Goal
 
-- Reboot → verify Docker runs (`docker run hello-world`) → close Unit 0 → start Unit 1 (scaffold)
+- pnpm workspace scaffold: `apps/api` Nest + `apps/web` Next, Prisma init, docker-compose.yml (dev + test dbs), health endpoint, repo pushed
 
 ## Completed
 
@@ -16,14 +16,15 @@ Update this file after every meaningful implementation change.
 - 2026-07-04: Repo created from `AzimHsy/context-kit` template; all six context files filled from the discussion
 - 2026-07-04: Specs approved by Azim (committed + pushed as `4d012e3`) — hard gate cleared
 - 2026-07-04: Unit 0 install — VirtualMachinePlatform feature enabled (DISM exit 0), WSL 2.7.10 + Docker Desktop 4.80.0 installed via winget (elevated, all exit 0); binaries verified on disk
+- 2026-07-04: **Unit 0 CLOSED** — rebooted, WSL2 default, Docker engine 29.6.1 up, `docker run --rm hello-world` prints "Hello from Docker!" exit 0 (fresh verification)
 
 ## In Progress
 
-- Unit 0 verification: **blocked on Windows reboot** (WSL2 virtualization layer requires it). After reboot: launch Docker Desktop, accept its license dialog, verify with `docker run hello-world`
+- Unit 1: workspace scaffold
 
 ## Next Up
 
-- Unit 1: pnpm workspace scaffold (`apps/api` Nest + `apps/web` Next), Prisma init, docker-compose.yml, health endpoint
+- Unit 2: Auth (users, bcrypt, JWT login, roles guards, seed admin)
 
 ## Open Questions
 

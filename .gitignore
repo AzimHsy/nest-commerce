@@ -1,0 +1,24 @@
+# dependencies
+node_modules/
+
+# builds
+dist/
+.next/
+out/
+
+# env — commit .env.example only
+.env
+.env.*
+!.env.example
+
+# logs & coverage
+*.log
+coverage/
+
+# tooling caches
+.turbo/
+*.tsbuildinfo
+
+# OS
+Thumbs.db
+.DS_Store
