@@ -1,5 +1,7 @@
 packages:
   - apps/*
 allowBuilds:
-  sharp: set this to true or false
-  unrs-resolver: set this to true or false
+  '@prisma/engines': true
+  prisma: true
+  sharp: true
+  unrs-resolver: true
