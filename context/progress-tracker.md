@@ -4,11 +4,11 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- **Unit 5 (voucher engine) — DONE. Next: Unit 6 (reference storefront).**
+- **Unit 6 (reference storefront) — DONE. Next: Unit 7 (reports).**
 
 ## Current Goal
 
-- Unit 6: plain Next.js storefront — browse → cart → voucher checkout → fake-pay (Next server route signs webhook) → confirmation, stock visibly drops. ≤20% effort cap, ui-context constraints.
+- Unit 7: Reports — daily revenue, top products, low stock (aggregation queries; ADMIN+STAFF readable)
 
 ## Completed
 
@@ -26,13 +26,15 @@ Update this file after every meaningful implementation change.
 
 - 2026-07-05: **Unit 5 CLOSED** — Voucher engine. `Voucher` model (`code` unique, PERCENT|FIXED, `value`, `expiresAt?`, `usageLimit?`, `usedCount`, `minSpendSen?`) + real `Order.voucher` relation; migration `vouchers`. ADMIN-only CRUD (`/vouchers` — STAFF 403 per access model); PERCENT value >100 → 400. Order creation takes optional `voucherCode`: validated there (unknown/expired/at-limit/min-spend → **422**), discount computed server-side (PERCENT floors; FIXED capped at subtotal so total ≥ 0), `voucherId` stored. Payment webhook increments `usedCount` inside the SAME `$transaction` (invariant 5: pending order never consumes a use) — unconditional increment; documented trade-off: a race between two pending orders on a nearly-exhausted voucher can slightly exceed `usageLimit` (can't decline received money at webhook time). Seed extended: 3 products/6 variants + `WELCOME10` (10% min-RM50) + `RM5OFF` (fixed). Tests: **10 voucher e2e** (CRUD+409, 403/401, >100% 400, percent-floor math 999→99, fixed cap → total 0, expired/limit/min-spend/unknown 422, usedCount 0-until-paid → 1 → replay stays 1) — suite **37 e2e + 5 unit**, build exit 0.
 
+- 2026-07-05: **Unit 6 CLOSED** — Reference storefront (plain per ui-context: system font, light only, Tailwind defaults, no libs/icons/animation; boilerplate webfonts+dark stripped). Pages: `/` product grid (from-price, sold-out), `/products/[slug]` (variant radio + stock + add-to-cart), `/cart` (qty/remove, display-only subtotal), `/checkout` (name/email/voucher form → POST /orders, 422/409 shown inline), `/orders/[id]` (server-fetched status/items/discount/totals + Fake Pay when PENDING). Client state = one `CartProvider` (localStorage); ALL math/validation server-side (invariant 6). **`/api/fake-pay` Next server route holds `WEBHOOK_SECRET` (no NEXT_PUBLIC), HMAC-signs a fresh eventId and forwards to the API** — browser never sees the secret. **VERIFIED LIVE end-to-end**: home renders 3 seeded products; checkout 2×TEE-BLK-M + WELCOME10 → 9800/-980/8820; order page PENDING→ fake-pay `{"status":"ok"}` → PAID + "Payment received"; product page stock **15→13 visibly**. `pnpm --filter web build` exit 0 (7 routes). API untouched this unit (37 e2e still valid). Effort well under the 20% cap.
+
 ## In Progress
 
-- None — at Unit 5/6 boundary.
+- None — at Unit 6/7 boundary.
 
 ## Next Up
 
-- Unit 6: Reference storefront (`apps/web`) — full visible loop: browse → cart → voucher checkout → fake-pay → stock drop. Fake-pay = Next server route holding `WEBHOOK_SECRET` server-side, signs + forwards to the API. HARD: no polish, ≤20% effort cap.
+- Unit 7: Reports — daily revenue (PAID orders), top products, low stock; read-only for ADMIN+STAFF per access model
 
 ## Open Questions
 
