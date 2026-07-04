@@ -4,11 +4,11 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- **Unit 2 (auth) — DONE. Next: Unit 3 (products + variants CRUD).**
+- **Unit 3 (products + variants CRUD) — DONE. Next: Unit 4 (orders + stock).**
 
 ## Current Goal
 
-- Unit 3: Product + Variant models, admin CRUD (ADMIN-only via @Roles), public list/detail, validation
+- Unit 4: create-order flow, `$transaction` stock decrement, oversell 409, idempotent signed payment webhook
 
 ## Completed
 
@@ -19,15 +19,16 @@ Update this file after every meaningful implementation change.
 - 2026-07-04: **Unit 0 CLOSED** — rebooted, WSL2 default, Docker engine 29.6.1 up, `docker run --rm hello-world` prints "Hello from Docker!" exit 0 (fresh verification)
 - 2026-07-04: **Unit 1 CLOSED** — pnpm workspace (`apps/api` Nest 11 + `apps/web` Next 16, plain Tailwind); `docker-compose.yml` Postgres 16 (dev `nest_commerce` + test `nest_commerce_test` via init script), container healthy; Prisma 7 wired on the **pg driver adapter** (`prisma.config.ts` + `PrismaService` with `@prisma/adapter-pg`); global `PrismaModule`; `GET /health` does `SELECT 1` → `{status:ok, db:up}`; e2e routed to test db (`setup-e2e.ts`) and **passing**; `pnpm -r build` exit 0. Strict TS on. pnpm build approvals set (sharp, unrs-resolver, prisma, @prisma/engines)
 
-- 2026-07-04: **Unit 2 CLOSED** — Auth. `User` model + `Role` enum (ADMIN/STAFF), first migration `init_auth` applied. `POST /auth/login` (bcryptjs verify → signed JWT), `GET /auth/me` (JwtAuthGuard). Passport JwtStrategy; global ValidationPipe (whitelist/forbidNonWhitelisted/transform); RolesGuard registered as APP_GUARD + `@Roles`/`@CurrentUser` decorators ready for Unit 3. Seed upserts admin+staff (verified). Tests: 6 e2e (login ok/401/400, /auth/me 401/200) against `nest_commerce_test` via globalSetup migrate deploy + 5 RolesGuard unit tests. `pnpm -r build` exit 0.
+- 2026-07-04: **Unit 2 CLOSED** — Auth. `User` model + `Role` enum (ADMIN/STAFF), first migration `init_auth` applied. `POST /auth/login` (bcryptjs verify → signed JWT), `GET /auth/me` (JwtAuthGuard). Passport JwtStrategy; global ValidationPipe (whitelist/forbidNonWhitelisted/transform); `@Roles`/`@CurrentUser` decorators. Seed upserts admin+staff (verified). Tests: 6 e2e + 5 RolesGuard unit. `pnpm -r build` exit 0.
+- 2026-07-04: **Unit 3 CLOSED** — Products + Variants CRUD. `Product` (slug unique) + `Variant` (sku unique, priceSen, stockQty, cascade delete) models, migration `products_variants`. Public reads (`GET /products`, `GET /products/:slug` with variants, 404 on miss). Admin-only writes via `@UseGuards(JwtAuthGuard, RolesGuard)` + `@Roles(ADMIN)`: product POST/PATCH/DELETE, variant POST (under product) / PATCH / DELETE. class-validator DTOs + `PartialType` for updates. P2002 → 409 conflict, missing → 404. Tests: **12 products e2e** (public list/detail, admin create, **STAFF→403 = RolesGuard end-to-end**, 401 no-token, 409 dup slug/sku, 400 invalid/negative price, 404 missing, update+delete 204) — total suite now **18 e2e + 5 unit**, `pnpm -r build` exit 0.
 
 ## In Progress
 
-- None — at Unit 2/3 boundary.
+- None — at Unit 3/4 boundary.
 
 ## Next Up
 
-- Unit 3: Products + variants CRUD with validation (admin-only writes exercise RolesGuard end-to-end for the first time)
+- Unit 4: Orders + stock — create-order flow, atomic `$transaction` decrement with `stockQty >= qty` guard, oversell → 409, idempotent signed payment webhook (`WebhookEvent` ledger), voucher check hook (voucher engine is Unit 5)
 
 ## Open Questions
 
@@ -37,7 +38,7 @@ Update this file after every meaningful implementation change.
 
 - **bcryptjs instead of native bcrypt** (2026-07-04) — native bcrypt needs node-gyp; on Windows + Node 24 that's a build gamble with no benefit. bcryptjs is pure-JS, same `hash`/`compare` API. Spec said "bcrypt" generically; intent preserved.
 - **Prisma 7 gotcha**: `migrate dev` auto-generate can lag the schema (client embedded a stale schema once). Always run an explicit `prisma generate` after a migration. Baked into the workflow.
-- **RolesGuard** is wired app-wide (APP_GUARD) but no route uses `@Roles` yet, so its deny path is covered by a unit test now; first end-to-end role rejection lands with Unit 3's admin-only product routes.
+- **RolesGuard wiring corrected in Unit 3**: Unit 2 registered RolesGuard as a global `APP_GUARD`, but global guards run BEFORE method-level `@UseGuards(JwtAuthGuard)`, so `request.user` wouldn't be set when a role check ran. Aligned to the spec (`code-standards.md`): removed the global registration; protected routes now use `@UseGuards(JwtAuthGuard, RolesGuard)` (guards execute in listed order → auth then role) + `@Roles(...)`. Verified end-to-end by the STAFF→403 e2e test.
 
 ## Architecture Decisions
 
