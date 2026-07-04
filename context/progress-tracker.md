@@ -4,11 +4,11 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- **Unit 4 (orders + stock + webhook) — DONE. Next: Unit 5 (voucher engine).**
+- **Unit 5 (voucher engine) — DONE. Next: Unit 6 (reference storefront).**
 
 ## Current Goal
 
-- Unit 5: Voucher model + engine — percent/fixed, expiry, usage limit, min spend; validated at order creation, usage counted at payment (invariant 5)
+- Unit 6: plain Next.js storefront — browse → cart → voucher checkout → fake-pay (Next server route signs webhook) → confirmation, stock visibly drops. ≤20% effort cap, ui-context constraints.
 
 ## Completed
 
@@ -24,13 +24,15 @@ Update this file after every meaningful implementation change.
 
 - 2026-07-05: **Unit 4 CLOSED** — Orders + stock + payment webhook (the risky-30% core). Models: `Order` (PENDING/PAID/CANCELLED, money fields, voucherId? placeholder) + `OrderItem` (`priceSenSnapshot`) + `WebhookEvent` (unique `externalEventId` ledger); migration `orders_stock_webhooks`. `POST /orders` (public): validates stock (fail-fast 409, NOT reserved), snapshots prices, computes totals server-side. `GET /orders/:id`. `POST /webhooks/payment`: HMAC-SHA256 signature guard over **raw body** (`rawBody: true` + timing-safe compare), then idempotent processing — ledger insert + conditional `updateMany` decrement (`stockQty >= qty`, count!==1 → 409 rollback) + status→PAID, all in ONE `$transaction`; duplicate event → 200 `already_processed` (fast path + P2002 race path). Tests: **9 orders e2e** (pending order w/ snapshot totals, creation oversell 409 stock-untouched, happy pay decrements once, replay no-op, payment-race 409 + never-negative, bad/missing signature 401 leaves PENDING, unknown order 404, price-edit never moves existing totals) — suite now **27 e2e + 5 unit**, `pnpm -r build` exit 0.
 
+- 2026-07-05: **Unit 5 CLOSED** — Voucher engine. `Voucher` model (`code` unique, PERCENT|FIXED, `value`, `expiresAt?`, `usageLimit?`, `usedCount`, `minSpendSen?`) + real `Order.voucher` relation; migration `vouchers`. ADMIN-only CRUD (`/vouchers` — STAFF 403 per access model); PERCENT value >100 → 400. Order creation takes optional `voucherCode`: validated there (unknown/expired/at-limit/min-spend → **422**), discount computed server-side (PERCENT floors; FIXED capped at subtotal so total ≥ 0), `voucherId` stored. Payment webhook increments `usedCount` inside the SAME `$transaction` (invariant 5: pending order never consumes a use) — unconditional increment; documented trade-off: a race between two pending orders on a nearly-exhausted voucher can slightly exceed `usageLimit` (can't decline received money at webhook time). Seed extended: 3 products/6 variants + `WELCOME10` (10% min-RM50) + `RM5OFF` (fixed). Tests: **10 voucher e2e** (CRUD+409, 403/401, >100% 400, percent-floor math 999→99, fixed cap → total 0, expired/limit/min-spend/unknown 422, usedCount 0-until-paid → 1 → replay stays 1) — suite **37 e2e + 5 unit**, build exit 0.
+
 ## In Progress
 
-- None — at Unit 4/5 boundary.
+- None — at Unit 5/6 boundary.
 
 ## Next Up
 
-- Unit 5: Voucher engine — validation at order creation (expiry/usage-limit/min-spend → 422), `usedCount` incremented at payment inside the webhook transaction
+- Unit 6: Reference storefront (`apps/web`) — full visible loop: browse → cart → voucher checkout → fake-pay → stock drop. Fake-pay = Next server route holding `WEBHOOK_SECRET` server-side, signs + forwards to the API. HARD: no polish, ≤20% effort cap.
 
 ## Open Questions
 

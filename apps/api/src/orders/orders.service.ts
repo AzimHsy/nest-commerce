@@ -6,11 +6,15 @@ import {
 } from '@nestjs/common';
 import { Order } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { VouchersService } from '../vouchers/vouchers.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 
 @Injectable()
 export class OrdersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly vouchers: VouchersService,
+  ) {}
 
   // Creates a PENDING order. Stock is VALIDATED here (fail fast on oversell) but
   // NOT decremented — the atomic decrement happens at payment (webhook), per the
@@ -45,14 +49,27 @@ export class OrdersService {
       };
     });
 
-    // No voucher in Unit 4 — discount is 0, total equals subtotal (Unit 5 adds it).
+    // Voucher (invariant 5): validated here at creation; its usage is counted
+    // only at payment, inside the webhook transaction.
+    let discountSen = 0;
+    let voucherId: string | null = null;
+    if (dto.voucherCode) {
+      const voucher = await this.vouchers.validateForOrder(
+        dto.voucherCode,
+        subtotalSen,
+      );
+      discountSen = this.vouchers.computeDiscountSen(voucher, subtotalSen);
+      voucherId = voucher.id;
+    }
+
     return this.prisma.order.create({
       data: {
         customerName: dto.customerName,
         customerEmail: dto.customerEmail,
         subtotalSen,
-        discountSen: 0,
-        totalSen: subtotalSen,
+        discountSen,
+        totalSen: subtotalSen - discountSen,
+        voucherId,
         items: { create: itemsData },
       },
       include: { items: true },

@@ -66,10 +66,31 @@ model Order {
   subtotalSen   Int
   discountSen   Int         @default(0)
   totalSen      Int
-  voucherId     String? // relation added in Unit 5 (voucher engine)
+  voucherId     String?
+  voucher       Voucher?    @relation(fields: [voucherId], references: [id])
   items         OrderItem[]
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
+}
+
+enum VoucherType {
+  PERCENT
+  FIXED
+}
+
+model Voucher {
+  id          String      @id @default(uuid())
+  code        String      @unique
+  type        VoucherType
+  // PERCENT: whole percent 1–100 of subtotal. FIXED: discount in sen.
+  value       Int
+  expiresAt   DateTime?
+  usageLimit  Int?
+  usedCount   Int         @default(0)
+  minSpendSen Int?
+  orders      Order[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 }
 
 model OrderItem {

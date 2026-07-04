@@ -59,6 +59,18 @@ export class WebhooksService {
           }
         }
 
+        // Invariant 5: voucher usage is counted at payment, not at creation.
+        // Unconditional increment — we can't decline already-received money at
+        // webhook time, so a race between two pending orders sharing a nearly
+        // exhausted voucher may exceed usageLimit slightly (documented trade-off;
+        // real gateways refund in that case).
+        if (order.voucherId) {
+          await tx.voucher.update({
+            where: { id: order.voucherId },
+            data: { usedCount: { increment: 1 } },
+          });
+        }
+
         await tx.order.update({
           where: { id: dto.orderId },
           data: { status: OrderStatus.PAID },

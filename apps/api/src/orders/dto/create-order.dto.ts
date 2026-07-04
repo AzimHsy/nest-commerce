@@ -4,6 +4,7 @@ import {
   IsArray,
   IsEmail,
   IsInt,
+  IsOptional,
   IsString,
   IsUUID,
   Min,
@@ -34,4 +35,9 @@ export class CreateOrderDto {
   @ValidateNested({ each: true })
   @Type(() => OrderItemDto)
   items!: OrderItemDto[];
+
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  voucherCode?: string;
 }

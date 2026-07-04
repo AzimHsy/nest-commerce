@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { ProductsModule } from './products/products.module';
 import { OrdersModule } from './orders/orders.module';
+import { VouchersModule } from './vouchers/vouchers.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 
 @Module({
@@ -16,6 +17,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
     AuthModule,
     ProductsModule,
     OrdersModule,
+    VouchersModule,
     WebhooksModule,
   ],
   controllers: [AppController],
