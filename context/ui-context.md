@@ -1,59 +1,52 @@
 # UI Context
 
+> **This project is backend-first.** The storefront (`apps/web`) exists to exercise the API. This file is deliberately minimal — and that minimalism is a spec, not an omission.
+
 ## Theme
 
-[Describe the overall visual language — e.g. Dark only.
-No light mode. The design language is a dark technical
-workspace — near-black backgrounds, layered surfaces,
-and vivid accent colors for interactive elements.]
+Light only. Plain, unstyled-feeling utility UI — closer to a technical demo than a brand. Whitespace, system font, black text on white. If a page looks "designed", it has gone too far.
 
 ## Colors
 
-[Define your color tokens as CSS custom properties.
-All components must use these tokens — no hardcoded
-hex values.]
+Tailwind defaults only — no custom tokens, no brand palette.
 
-| Role            | CSS Variable       | Value    |
-| --------------- | ------------------ | -------- |
-| Page background | `--bg-base`        | `#[hex]` |
-| Surface         | `--bg-surface`     | `#[hex]` |
-| Primary text    | `--text-primary`   | `#[hex]` |
-| Muted text      | `--text-muted`     | `#[hex]` |
-| Primary accent  | `--accent-primary` | `#[hex]` |
-| Border          | `--border-default` | `#[hex]` |
-| Error           | `--state-error`    | `#[hex]` |
-| Success         | `--state-success`  | `#[hex]` |
+| Role            | Class                     |
+| --------------- | ------------------------- |
+| Page background | `bg-white`                |
+| Surface/cards   | `bg-gray-50`              |
+| Primary text    | `text-gray-900`           |
+| Muted text      | `text-gray-500`           |
+| Action buttons  | `bg-gray-900 text-white`  |
+| Border          | `border-gray-200`         |
+| Error           | `text-red-600`            |
+| Success         | `text-green-600`          |
+| Sold out        | `text-gray-400` + disabled |
 
 ## Typography
 
-| Role      | Font              | Variable      |
-| --------- | ----------------- | ------------- |
-| UI text   | [e.g. Geist Sans] | `--font-sans` |
-| Code/mono | [e.g. Geist Mono] | `--font-mono` |
+System font stack (Tailwind default `font-sans`). No webfonts, no display faces.
 
 ## Border Radius
 
-| Context           | Class            |
-| ----------------- | ---------------- |
-| Inline / small UI | `rounded-[size]` |
-| Cards / panels    | `rounded-[size]` |
-| Modals / overlays | `rounded-[size]` |
+`rounded-md` everywhere interactive, `rounded-lg` for cards. Don't think about it beyond that.
 
 ## Component Library
 
-[e.g. shadcn/ui on top of Tailwind. Components live
-in components/ui/. Use the CLI to add new components
-rather than writing from scratch.]
+**None.** No shadcn, no Radix. Plain JSX + Tailwind utilities. Components live in `apps/web/components/` only when used on 2+ pages.
 
 ## Layout Patterns
 
-- [Pattern — e.g. Editor: full-viewport split with
-  left sidebar, center canvas, right sidebar]
-- [Pattern — e.g. Sidebars: fixed width with border separator]
-- [Pattern — e.g. Modals: centered overlay with backdrop blur]
-- [Pattern — e.g. Navbar: top bar with bottom border]
+- Every page: centered `max-w-4xl mx-auto px-4` column, simple top nav (store name + cart count)
+- Product list: `grid grid-cols-2 md:grid-cols-3 gap-4`
+- Cart/checkout: single column form, native inputs
+- Feedback: inline text messages (no toasts, no modals)
 
 ## Icons
 
-[e.g. Lucide React. Stroke-based icons only. Sizes:
-h-4 w-4 for inline, h-5 w-5 for buttons.]
+None, or plain text/emoji if something needs a marker. Do not add an icon library.
+
+## HARD CONSTRAINTS
+
+- ❌ No Framer Motion, GSAP, Lenis, or any animation library — no CSS animations beyond default hover/focus states
+- ❌ No design polish passes. The storefront is DONE when the flow works, not when it looks good
+- ⏱ Storefront total effort budget: ≤ 20% of the project. If it's exceeding that, stop and cut scope
