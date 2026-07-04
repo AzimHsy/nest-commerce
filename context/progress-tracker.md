@@ -4,11 +4,11 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- **Unit 6 (reference storefront) — DONE. Next: Unit 7 (reports).**
+- **Unit 7 (reports) — DONE. Next: Unit 8 (hardening + CI, final unit).**
 
 ## Current Goal
 
-- Unit 7: Reports — daily revenue, top products, low stock (aggregation queries; ADMIN+STAFF readable)
+- Unit 8: throttler, helmet, CORS tightened, GitHub Actions CI, final security pass, honest README
 
 ## Completed
 
@@ -28,13 +28,15 @@ Update this file after every meaningful implementation change.
 
 - 2026-07-05: **Unit 6 CLOSED** — Reference storefront (plain per ui-context: system font, light only, Tailwind defaults, no libs/icons/animation; boilerplate webfonts+dark stripped). Pages: `/` product grid (from-price, sold-out), `/products/[slug]` (variant radio + stock + add-to-cart), `/cart` (qty/remove, display-only subtotal), `/checkout` (name/email/voucher form → POST /orders, 422/409 shown inline), `/orders/[id]` (server-fetched status/items/discount/totals + Fake Pay when PENDING). Client state = one `CartProvider` (localStorage); ALL math/validation server-side (invariant 6). **`/api/fake-pay` Next server route holds `WEBHOOK_SECRET` (no NEXT_PUBLIC), HMAC-signs a fresh eventId and forwards to the API** — browser never sees the secret. **VERIFIED LIVE end-to-end**: home renders 3 seeded products; checkout 2×TEE-BLK-M + WELCOME10 → 9800/-980/8820; order page PENDING→ fake-pay `{"status":"ok"}` → PAID + "Payment received"; product page stock **15→13 visibly**. `pnpm --filter web build` exit 0 (7 routes). API untouched this unit (37 e2e still valid). Effort well under the 20% cap.
 
+- 2026-07-05: **Unit 7 CLOSED** — Reports. Added `Order.paidAt` (set inside the payment `$transaction`; migration `order_paid_at`) so revenue is keyed on payment day, not order day. `/reports` guarded `@Roles(ADMIN, STAFF)` (STAFF may read reports per access model): `daily-revenue` (raw SQL `date_trunc` on `paidAt`, PAID only), `top-products?limit=` (raw SQL join, units + `qty × priceSenSnapshot` revenue — the two spec-sanctioned raw-SQL aggregations; bigint→Number at the edge), `low-stock?threshold=` (typed Prisma `lte`, ascending). Tests: **6 reports e2e** (anon 401, STAFF 200, revenue math 3 orders = 10000 sen with unpaid order excluded, top ordering + snapshot revenue, `?limit`, threshold behavior) — suite **43 e2e + 5 unit**, build exit 0.
+
 ## In Progress
 
-- None — at Unit 6/7 boundary.
+- None — at Unit 7/8 boundary.
 
 ## Next Up
 
-- Unit 7: Reports — daily revenue (PAID orders), top products, low stock; read-only for ADMIN+STAFF per access model
+- Unit 8 (final): `@nestjs/throttler` (env-tunable, e2e override), helmet, CORS tightened to the storefront origin, `.github/workflows/ci.yml` (postgres service; lint/build/test/e2e/audit — the reusable CI template deliverable), final security pass, honest README
 
 ## Open Questions
 

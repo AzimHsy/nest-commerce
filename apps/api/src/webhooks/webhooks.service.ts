@@ -73,7 +73,7 @@ export class WebhooksService {
 
         await tx.order.update({
           where: { id: dto.orderId },
-          data: { status: OrderStatus.PAID },
+          data: { status: OrderStatus.PAID, paidAt: new Date() },
         });
       });
 
